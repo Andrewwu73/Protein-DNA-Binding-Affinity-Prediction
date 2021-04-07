@@ -1,0 +1,18 @@
+PreDBA program is developed to quickly display the binding affinity of protein-DNA complexes. 
+The code has been tested in Linux system, and the python version is 3.6+.
+More functions can be found on the webserver PreDBA(http://PreDBA.denglab.org/).
+----------------------------------------------------------------------
+You can use the program in any directory (like /?/?/ )
+do the follows:
+
+1. Before using pnab, you need to install several necessary software in /?/?/PreDBA/bin/, such as ViennaRNA and RNAVIEW, by yourself.
+2, To test the program, go to directory /?/?/?/PreDBA/run/
+   type  perl run_PreDBA.pl -i ../test/10MHA.txt -l ../test/10MHC.txt -c SS -o ../test/out.data
+
+    -i  [str]   Input protein chain file
+    -l  [str]   Input DNA chain file
+    -c  [str]   The class of complex, "SS" means "Complex with single-starnd DNA", "DD" means "Complex with duplex DNA", "MISC" means "Complex with miscellaneous DNA".
+    -o  [str]   Output file(binding affinity).
+
+
+   You will get the prediction result of binding affinity on the shell interface .

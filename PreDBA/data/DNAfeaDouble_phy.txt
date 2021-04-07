@@ -1,0 +1,5 @@
+DNA	DNACode	Mmass
+A	A	617.40
+T	T	617.40
+C	C	618.40
+G	G	618.40

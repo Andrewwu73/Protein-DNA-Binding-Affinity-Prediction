@@ -1,0 +1,5 @@
+DNA	DNACode	Mmass
+A	A	313.20
+T	T	304.20
+C	C	289.20
+G	G	329.20
