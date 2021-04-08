@@ -16,9 +16,9 @@ with open('pronit.csv', newline='') as csvfile:
             energies.append(d)
 
 
-plt.title("Binding Affinity Versus DNA Length")
-plt.xlabel("DNA Length (# of Nucleic Acids)")
+plt.title("Binding Affinity Versus Protein Length")
+plt.xlabel("Protein Length (# of Amino Acids)")
 plt.ylabel("Binding Affinity (kcal/mol)")
-plt.plot(dnaSequences, energies)
+plt.plot(dnaSequences, energies, "ob")
 plt.show()
 
