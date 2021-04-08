@@ -19,6 +19,6 @@ with open('pronit.csv', newline='') as csvfile:
 plt.title("Binding Affinity Versus Protein Length")
 plt.xlabel("Protein Length (# of Amino Acids)")
 plt.ylabel("Binding Affinity (kcal/mol)")
-plt.plot(dnaSequences, energies, "ob")
+plt.plot(proteinSequences, energies, "ob")
 plt.show()
 
