@@ -41,6 +41,7 @@ def train_step(model, x, optimizer):
 train_dataset = []#TODO
 
 test_dataset = []#TODO
+
 def train(epochs = 10, latent_dim=32):
     model = CVAE(latent_dim)
     for epoch in range(1, epochs + 1):
