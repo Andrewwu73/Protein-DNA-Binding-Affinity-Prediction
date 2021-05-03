@@ -33,7 +33,7 @@ class obtainDNAData():
             for row in csv_reader:
                 if (self.special_match(row[2])):
                     dataset_no_repeats.add(row[2].lower())
-        dataset_no_repeats = list(dataset_no_repeats)[:len(dataset_no_repeats)//5]
+        dataset_no_repeats = list(dataset_no_repeats)[:len(dataset_no_repeats)//10]
         print(len(dataset_no_repeats))
         # print(len(dataset_no_repeats))
         max = 0

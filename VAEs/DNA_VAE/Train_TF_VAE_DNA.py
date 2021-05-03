@@ -70,15 +70,19 @@ def train(epochs = 10, latent_dim=32, reg_coeff = 0.0001, dropout_rate = 0):
       # display.clear_output(wait=False)
       print('Epoch: {}, Test set ELBO: {}, time elapse for current epoch: {}'
             .format(epoch, elbo, end_time - start_time))
+    model.save_weights('dna_model')
     return model
-#hypers = {"latent_dim": [16, 32, 64, 128], "reg_coeff": [0.0001, 0.00001, 0.00005], "dropout_rate": [0.01, 0.001, 0.0001]}
-#for l in range(3):
-#    for r in range(3):
-#        for d in range(3):
-#            print("\n\nNew Epoch:\n\n")
-#            latent = hypers["latent_dim"][l]
-#            reg = hypers["reg_coeff"][r]
-#            drop = hypers["dropout_rate"][d]
-#            print('Latent Dimension: {}, Reg Coeff: {}, Dropout Rate: {}'
-#                  .format(latent, reg, drop))
-trained = train(latent_dim=32, reg_coeff=0.00005, dropout_rate=0.001)
+
+# hypers = {"latent_dim": [16, 32, 64, 128], "reg_coeff": [0.0001, 0.00001, 0.00005], "dropout_rate": [0.01, 0.001, 0.0001]}
+# for l in range(3):
+#     for r in range(3):
+#         for d in range(3):
+#             print("\n\nNew Epoch:\n\n")
+#             latent = hypers["latent_dim"][l]
+#             reg = hypers["reg_coeff"][r]
+#             drop = hypers["dropout_rate"][d]
+#             print('Latent Dimension: {}, Reg Coeff: {}, Dropout Rate: {}'
+#                   .format(latent, reg, drop))
+trained = train(latent_dim=64, reg_coeff=0.00005, dropout_rate=0.001)
+
+# model.load_weights("dna_model")
