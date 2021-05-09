@@ -50,7 +50,7 @@ test_dataset = tf.cast(tf.convert_to_tensor(test_dataset), dtype=tf.float32)
 shape_of_input = tf.expand_dims(train_dataset[0], axis=2)
 # shape_of_input = tf.expand_dims(shape_of_input, axis=3)
 shape_of_input = shape_of_input.shape
-
+print(shape_of_input)
 def train(epochs = 10, latent_dim=32, reg_coeff = 0.0001, dropout_rate = 0):
     model = CVAE(latent_dim, shape_of_input, reg_coeff, dropout_rate)
     for epoch in range(1, epochs + 1):
@@ -83,6 +83,7 @@ def train(epochs = 10, latent_dim=32, reg_coeff = 0.0001, dropout_rate = 0):
 #             drop = hypers["dropout_rate"][d]
 #             print('Latent Dimension: {}, Reg Coeff: {}, Dropout Rate: {}'
 #                   .format(latent, reg, drop))
-trained = train(latent_dim=64, reg_coeff=0.00005, dropout_rate=0.001)
-
+#trained = train(latent_dim=64, reg_coeff=0.00005, dropout_rate=0.001)
+#model = CVAE(64, (500, 4, 1), 0.00005, 0.001)
+#model.load_weights("dna_model")
 # model.load_weights("dna_model")
