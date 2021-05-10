@@ -58,7 +58,7 @@ def process_data(features, normalize = True):
         try:
           allowed = True
           if(normalize and float(d_g_v)>-14 and float(d_g_v) < -4):
-            allowed = (random.random() < 0.05)
+            allowed = (random.random() < 0.15)
           if(allowed):
             d_gs.append(float(d_g_v))
             protein_sequences.append(list(protein.upper().rstrip().ljust(496, '_')[:496]))
@@ -71,7 +71,7 @@ def process_data(features, normalize = True):
   latent_protein = tf.concat(protein_encoder.encode(protein_sequences), axis=1)
   latent_dna = tf.concat(dna_encoder.encode(dna_sequences), axis=1)
   return tf.concat([latent_protein, latent_dna], axis=1), tf.convert_to_tensor(d_gs)
-train_data, train_labels = process_data(train_features, False)
+train_data, train_labels = process_data(train_features, True)
 test_data, test_labels = process_data(test_features, False)
 
 def build_and_compile_model():
@@ -85,7 +85,7 @@ def build_and_compile_model():
       layers.Dense(1)
   ])
 
-  model.compile(loss='MeanSquaredError',
+  model.compile(loss='MeanAbsoluteError',
                 optimizer=tf.keras.optimizers.Adam(0.001))
   return model
 
@@ -99,7 +99,7 @@ def plot_loss(history):
   plt.plot(history.history['val_loss'], label='val_loss')
   plt.ylim([0, 30])
   plt.xlabel('Epoch')
-  plt.ylabel('Mean Square Error for dG kcal/mol')
+  plt.ylabel('Mean Absolute Error for dG kcal/mol')
   plt.legend()
   plt.grid(True)
   plt.show()
@@ -119,3 +119,9 @@ binding_model = build_and_compile_model()
 history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=1, epochs=400)
 plot_loss(history)
 plot_test_results(binding_model)
+
+#TEST MSE = 7.91 for Leaky 3 layer Raw
+#TEST MSE = 15.586 for Leaky 3 Layer Normalized 15%
+#TEST MAE = 2.1669 for Leaky 3 Layer Normalized 15%
+print("TEST SET ERROR")
+print(binding_model.evaluate(test_data, test_labels))
