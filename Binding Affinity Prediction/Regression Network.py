@@ -10,6 +10,7 @@ from tensorflow.keras.layers.experimental import preprocessing
 from sklearn.preprocessing import OneHotEncoder
 from TF_VAE_PROTEIN import CVAE as protein_vae
 from TF_VAE_DNA import CVAE as dna_vae
+import operator
 import random
 protein_len = 496
 dna_len = 500
@@ -29,9 +30,9 @@ protein_encoder.load_weights("../VAEs/Protein_VAE/Protein_VAE")
 dna_encoder = dna_vae(64, (500, 4, 1), 0.00005, 0.001)
 dna_encoder.load_weights("../VAEs/DNA_VAE/dna_model")
 
-dataset = '../Datasets/Protein-DNA Complex/ProNIT_filtered.csv'
-column_names = ['entry', 'sequence', 'sequence_wild1', 'pronit_t', 'p_h',
-                'd_g_wild', 'stoichiometry']
+dataset = '../Datasets/Protein-DNA Complex/ProNIT_Final.csv'
+column_names = ['protein_sequence', 'dna_sequence', 'd_g_wild', 'entry']
+
 
 raw_dataset = pd.read_csv(dataset, names=column_names,
                           sep=',', skipinitialspace=True)
@@ -46,8 +47,8 @@ def process_data(features, normalize = True):
   protein_sequences = []
   d_gs = []
   for i in features['entry'].keys():
-    dna = features['sequence_wild1'][int(i)]
-    protein = features['sequence'][int(i)]
+    dna = features['dna_sequence'][int(i)]
+    protein = features['protein_sequence'][int(i)]
     d_g = features['d_g_wild'][int(i)]
     if(type(dna)==str and type(protein)==str and protein[0]!='(' and type(d_g)==str):
         d_g_v = d_g.split(' ')
@@ -85,7 +86,7 @@ def build_and_compile_model():
       layers.Dense(1)
   ])
 
-  model.compile(loss='MeanAbsoluteError',
+  model.compile(loss='MeanSquaredError',
                 optimizer=tf.keras.optimizers.Adam(0.001))
   return model
 
@@ -99,7 +100,7 @@ def plot_loss(history):
   plt.plot(history.history['val_loss'], label='val_loss')
   plt.ylim([0, 30])
   plt.xlabel('Epoch')
-  plt.ylabel('Mean Absolute Error for dG kcal/mol')
+  plt.ylabel('Mean Square Error for dG kcal/mol')
   plt.legend()
   plt.grid(True)
   plt.show()
@@ -115,11 +116,38 @@ def plot_test_results(model):
   plt.ylim(lims)
   plt.plot(lims, lims)
   plt.show()
+
+def plot_rank_correlation(model):
+  test_predictions = list(model.predict(test_data).flatten())
+  indices = [i for i in range(len(test_data))]
+  correct_labels = test_labels.numpy().tolist()
+  predicted = dict(zip(indices, test_predictions))
+  predictions_sorted_by_correct_labels = [k for k,v in sorted(zip(test_predictions, correct_labels), key = operator.itemgetter(1))]
+  # the rank i correct label was given predicted value predictions_***_[i]
+  indices_sorted_by_predictions = [k for k,v in sorted(zip(indices, test_predictions), key = operator.itemgetter(1))]
+  # the prediction with rank i originally had index indices_***_[i]
+  rank_correlation_permutation = [i for i in range(len(test_data))]
+  for rank in indices:
+    original_index = indices_sorted_by_predictions[rank]
+    for i in range(len(predictions_sorted_by_correct_labels)):
+      if(test_predictions[original_index]==predictions_sorted_by_correct_labels[i]):
+        rank_correlation_permutation[i] = rank
+        predictions_sorted_by_correct_labels[i] = 0
+        break
+  a = plt.axes(aspect='equal')
+  plt.scatter(indices, rank_correlation_permutation)
+  plt.xlabel("Rank of true Binding Affinity Value")
+  plt.ylabel("Rank of predicted Binding Affinity Value")
+  lims = [0, len(test_data)]
+  plt.xlim(lims)
+  plt.ylim(lims)
+  plt.plot(lims, lims)
+  plt.show()
 binding_model = build_and_compile_model()
-history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=1, epochs=400)
+history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=1, epochs=100)
 plot_loss(history)
 plot_test_results(binding_model)
-
+plot_rank_correlation(binding_model)
 #TEST MSE = 7.91 for Leaky 3 layer Raw
 #TEST MSE = 15.586 for Leaky 3 Layer Normalized 15%
 #TEST MAE = 2.1669 for Leaky 3 Layer Normalized 15%
