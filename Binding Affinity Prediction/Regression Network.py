@@ -51,6 +51,8 @@ def process_data(features, normalize = True):
     protein = features['protein_sequence'][int(i)]
     d_g = features['d_g_wild'][int(i)]
     if(type(dna)==str and type(protein)==str and protein[0]!='(' and type(d_g)==str):
+        protein = list(protein.upper().rstrip().ljust(496, '_')[:496])
+        dna = list(dna.upper().rstrip().ljust(500, ' ')[:500])
         d_g_v = d_g.split(' ')
         if(len(d_g_v)>=3):
           d_g_v = d_g_v[1]
@@ -59,20 +61,19 @@ def process_data(features, normalize = True):
         try:
           allowed = True
           if(normalize and float(d_g_v)>-14 and float(d_g_v) < -4):
-            allowed = (random.random() < 0.15)
+            allowed = (random.random() < 0.10)
           if(allowed):
             d_gs.append(float(d_g_v))
-            protein_sequences.append(list(protein.upper().rstrip().ljust(496, '_')[:496]))
-            dna_sequences.append(list(dna.upper().rstrip().ljust(500, ' ')[:500]))
+            protein_sequences.append(protein)
+            dna_sequences.append(dna)
         except:
           print(d_g)
-          
   dna_sequences = enc_dna.fit_transform(dna_sequences).reshape(-1, dna_len, 4, 1).astype('float32')
   protein_sequences = enc.fit_transform(protein_sequences).reshape(-1, protein_len, 21, 1).astype('float32')
   latent_protein = tf.concat(protein_encoder.encode(protein_sequences), axis=1)
   latent_dna = tf.concat(dna_encoder.encode(dna_sequences), axis=1)
   return tf.concat([latent_protein, latent_dna], axis=1), tf.convert_to_tensor(d_gs)
-train_data, train_labels = process_data(train_features, True)
+train_data, train_labels = process_data(train_features, False)
 test_data, test_labels = process_data(test_features, False)
 
 def build_and_compile_model():
@@ -81,11 +82,14 @@ def build_and_compile_model():
       layers.LeakyReLU(),
       layers.Dense(64, activation=None),
       layers.LeakyReLU(),
+      layers.Dropout(0.2),
       layers.Dense(64, activation=None),
       layers.LeakyReLU(),
       layers.Dense(1)
   ])
-
+  #model = keras.Sequential([
+  #  layers.Dense(1, activation=None),
+  #])
   model.compile(loss='MeanSquaredError',
                 optimizer=tf.keras.optimizers.Adam(0.001))
   return model
@@ -100,7 +104,7 @@ def plot_loss(history):
   plt.plot(history.history['val_loss'], label='val_loss')
   plt.ylim([0, 30])
   plt.xlabel('Epoch')
-  plt.ylabel('Mean Square Error for dG kcal/mol')
+  plt.ylabel('Mean Squared Error for dG kcal/mol')
   plt.legend()
   plt.grid(True)
   plt.show()
@@ -143,6 +147,36 @@ def plot_rank_correlation(model):
   plt.ylim(lims)
   plt.plot(lims, lims)
   plt.show()
+
+def outlier_correctness(model, cutoff):
+  #We define an outlier as those with values < cutoff kcal/mol.
+  #In this method, we compute two values:
+  #Precision: Fraction of predicted outliers that are indeed outliers
+  #Recall: Fraction of outliers that were successfully predicted.
+  test_predictions = list(model.predict(test_data).flatten())
+  correct_labels = test_labels.numpy().tolist()
+  true_positives = 0
+  false_negatives = 0
+  false_positives = 0
+  for i in range(len(test_predictions)):
+    if(test_predictions[i]<cutoff):
+      #predicted positive
+      if(correct_labels[i]<=cutoff):
+        true_positives += 1
+      else:
+        false_positives += 1
+    else:
+      if(correct_labels[i]<cutoff):
+        false_negatives +=1
+  #Return a precision, recall pair
+  if(true_positives == 0):
+    precision = 0
+    recall = 0
+  else:
+    precision =true_positives/(true_positives+false_positives)
+    recall = true_positives/(true_positives+false_negatives)
+  return precision, recall
+
 binding_model = build_and_compile_model()
 history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=1, epochs=100)
 plot_loss(history)
@@ -151,5 +185,5 @@ plot_rank_correlation(binding_model)
 #TEST MSE = 7.91 for Leaky 3 layer Raw
 #TEST MSE = 15.586 for Leaky 3 Layer Normalized 15%
 #TEST MAE = 2.1669 for Leaky 3 Layer Normalized 15%
-print("TEST SET ERROR")
-print(binding_model.evaluate(test_data, test_labels))
+#print("TEST SET ERROR")
+#print(binding_model.evaluate(test_data, test_labels))
