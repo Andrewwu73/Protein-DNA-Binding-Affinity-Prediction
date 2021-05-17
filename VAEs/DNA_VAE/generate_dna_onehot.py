@@ -35,9 +35,7 @@ class obtainDNAData():
                     dataset_no_repeats.add(row[2].lower())
         dataset_no_repeats = list(dataset_no_repeats)[:len(dataset_no_repeats)//10]
         print(len(dataset_no_repeats))
-        # print(len(dataset_no_repeats))
         max = 0
-        # A = np.pad(np.array([[0,1,0,0],[1,0,0,0]]), ((0,4-s.shape[0]),(0,0)), mode='constant')
         for i in dataset_no_repeats:
             if len(i) > max:
                 max = len(i)
@@ -49,3 +47,33 @@ class obtainDNAData():
 
         test_index = round(len(data) * 0.9)
         return np.array(data[0:test_index]), np.array(data[test_index:])
+
+    def getSequenceLengthData(self):
+
+        # open file in read mode
+        with open(self.dataset_directory, 'r') as read_obj:
+            # pass the file object to reader() to get the reader object
+            csv_reader = reader(read_obj)
+            # Iterate over each row in the csv using reader object
+            dataset_no_repeats = set()
+            for row in csv_reader:
+                if (self.special_match(row[2])):
+                    dataset_no_repeats.add(row[2].lower())
+        dataset_no_repeats = list(dataset_no_repeats)[:len(dataset_no_repeats)//10]
+        print(len(dataset_no_repeats))
+        max = 0
+        for i in dataset_no_repeats:
+            print(len(i))
+            if len(i) > max:
+                max = len(i)
+
+        lengths = []
+        data = []
+        for i in dataset_no_repeats:
+            lengths.append(len(i))
+            arr = self.one_hot_encoder(np.array(list(i)))
+            arr = np.pad(arr, ((0,max-arr.shape[0]),(0,0)), mode='constant')
+            data.append(arr)
+
+        test_index = round(len(data) * 0.9)
+        return np.array(lengths[test_index:]), np.array(data[test_index:])

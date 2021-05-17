@@ -1,2 +1,2 @@
-model_checkpoint_path: "dna_model"
-all_model_checkpoint_paths: "dna_model"
+model_checkpoint_path: "dna_lstm_full_model"
+all_model_checkpoint_paths: "dna_lstm_full_model"
