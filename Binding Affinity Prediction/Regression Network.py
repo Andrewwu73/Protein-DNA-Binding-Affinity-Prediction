@@ -61,7 +61,7 @@ def process_data(features, normalize = True):
         try:
           allowed = True
           if(normalize and float(d_g_v)>-14 and float(d_g_v) < -4):
-            allowed = (random.random() < 0.10)
+            allowed = (random.random() < 0.15)
           if(allowed):
             d_gs.append(float(d_g_v))
             protein_sequences.append(protein)
@@ -73,32 +73,55 @@ def process_data(features, normalize = True):
   latent_protein = tf.concat(protein_encoder.encode(protein_sequences), axis=1)
   latent_dna = tf.concat(dna_encoder.encode(dna_sequences), axis=1)
   return tf.concat([latent_protein, latent_dna], axis=1), tf.convert_to_tensor(d_gs)
-train_data, train_labels = process_data(train_features, False)
+train_data, train_labels = process_data(train_features, True)
 test_data, test_labels = process_data(test_features, False)
 
-def build_and_compile_model():
-  model = keras.Sequential([
-      layers.Dense(128, activation=None),
-      layers.LeakyReLU(),
-      layers.Dense(64, activation=None),
-      layers.LeakyReLU(),
+def build_and_compile_model(arch='leaky', loss='MeanSquaredError'):
+
+  if(arch=='leaky'):
+    model = keras.Sequential([
+        layers.Dense(128, activation=None),
+        layers.LeakyReLU(),
+        layers.Dense(64, activation=None),
+        layers.LeakyReLU(),
+        layers.Dropout(0.2),
+        layers.Dense(64, activation=None),
+        layers.LeakyReLU(),
+        layers.Dense(1)
+    ])
+  elif(arch=='2'):
+    model = keras.Sequential([
+      layers.Dense(128, activation='relu'),
       layers.Dropout(0.2),
-      layers.Dense(64, activation=None),
-      layers.LeakyReLU(),
+      layers.Dense(64, activation='relu'),
       layers.Dense(1)
-  ])
-  #model = keras.Sequential([
-  #  layers.Dense(1, activation=None),
-  #])
-  model.compile(loss='MeanSquaredError',
+    ])
+  elif(arch=='3'):
+    model = keras.Sequential([
+      layers.Dense(128, activation='relu'),
+      layers.Dense(64, activation='relu'),
+      layers.Dropout(0.2),
+      layers.Dense(64, activation='relu'),
+      layers.Dense(1)
+    ])
+  else:
+    model = keras.Sequential([
+      layers.Dense(1)
+    ])
+  
+
+  
+  model.compile(loss=loss,
                 optimizer=tf.keras.optimizers.Adam(0.001))
   return model
 
 def plot_data(data):
+  plt.xlabel('Binding Affinity in kcal/mol')
+  plt.ylabel('Number of Protein-DNA Pairs in Binding Affinity Range')
   plt.hist(data.numpy(), 20)
   plt.show()
 
-plot_data(train_labels)
+#plot_data(train_labels)
 def plot_loss(history):
   plt.plot(history.history['loss'], label='loss')
   plt.plot(history.history['val_loss'], label='val_loss')
@@ -177,13 +200,52 @@ def outlier_correctness(model, cutoff):
     recall = true_positives/(true_positives+false_negatives)
   return precision, recall
 
-binding_model = build_and_compile_model()
-history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=1, epochs=100)
-plot_loss(history)
-plot_test_results(binding_model)
-plot_rank_correlation(binding_model)
+
+losses = ['MeanSquaredError', 'MeanAbsoluteError']
+archs = ['leaky', '3', '2', 'linear']
+'''
+Final Error Results:
+Raw Dataset
+- Leaky 3 Layer
+  - MAE: 1.7602
+  - MSE: 6.8598
+- 3 Layer NN
+  - MSE: 7.126
+  - MAE: 2.380
+- 2 Layer NN
+  - MSE: 6.9515
+  - MAE: 1.882
+- Linear Baseline
+  - MAE: 1.934
+  - MSE: 11.913
+
+Normalized Dataset
+- Leaky 3 Layer
+  - MSE: 12.23
+  - MAE: 2.268
+- 3 Layer NN
+  - MSE: 17.2416
+  - MAE: 2.274
+- 2 Layer NN
+  - MSE: 14.1737
+  - MAE: 2.359
+- Linear MSE:
+  - MSE: 15.735
+  - MAE: 2.238
+'''
+#for arch in archs:
+#  for l in losses:
+binding_model = build_and_compile_model('leaky', 'mse')
+history = binding_model.fit(train_data, train_labels, validation_split=0.2, verbose=0, epochs=100)
+precision, recall = outlier_correctness(binding_model, -20)
+print("Precision: " + str(precision))
+print("Recall: "+str(recall))
+#print("Error for: "+arch + " "+l)
+#print(binding_model.evaluate(test_data, test_labels))
+#plot_loss(history)
+#plot_test_results(binding_model)
+#plot_rank_correlation(binding_model)
 #TEST MSE = 7.91 for Leaky 3 layer Raw
 #TEST MSE = 15.586 for Leaky 3 Layer Normalized 15%
 #TEST MAE = 2.1669 for Leaky 3 Layer Normalized 15%
-#print("TEST SET ERROR")
-#print(binding_model.evaluate(test_data, test_labels))
+
